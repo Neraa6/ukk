@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { comparePassword, signToken, setAuthCookie } from "@/lib/auth";
+import { comparePassword, signToken, setAuthCookie, verifyRecaptcha } from "@/lib/auth";
 
 const LoginSchema = z.object({
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(1, "Password wajib diisi"),
+  recaptchaToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,7 +21,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, password } = result.data;
+    const { email, password, recaptchaToken } = result.data;
+
+    // Verify reCAPTCHA
+    const isHuman = await verifyRecaptcha(recaptchaToken);
+    if (!isHuman) {
+      return NextResponse.json(
+        { message: "Verifikasi anti-bot gagal. Silakan centang reCAPTCHA." },
+        { status: 403 }
+      );
+    }
 
     // 1. Find guest
     const guest = await prisma.guests.findUnique({

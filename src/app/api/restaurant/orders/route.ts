@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
-import { createTransaction } from "@/lib/midtrans";
+import { createTransaction, syncTransactionStatus } from "@/lib/midtrans";
 
 const OrderItemSchema = z.object({
   menuId: z.number(),
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
           amount: totalPrice,
           payment_method: midtransRes.mock ? "mock_checkout" : null,
           payment_status: "pending",
-          note: orderId, // Store orderId for webhook matching
+          note: midtransRes.redirect_url ? `${orderId}|${midtransRes.redirect_url}` : orderId,
           updated_at: new Date(),
         },
       });
@@ -154,13 +154,101 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const authUser = getAuthUser();
   if (!authUser) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const queryOrderId = searchParams.get("order_id");
+    const queryTxStatus = searchParams.get("transaction_status");
+    const queryStatusCode = searchParams.get("status_code");
+    const queryPaymentType = searchParams.get("payment_type");
+
+    // 1. Direct Sync from callback query parameters (highly reliable for localhost testing)
+    if (queryOrderId && (queryTxStatus || queryStatusCode)) {
+      try {
+        const parts = queryOrderId.split("-");
+        const prefix = parts[0];
+        const targetId = parseInt(parts[1]);
+
+        if (prefix === "RESTO" && !isNaN(targetId)) {
+          let paymentStatus: "paid" | "failed" | "pending" = "pending";
+          if (
+            queryTxStatus === "settlement" ||
+            queryTxStatus === "capture" ||
+            queryStatusCode === "200"
+          ) {
+            paymentStatus = "paid";
+          } else if (
+            ["expire", "cancel", "deny"].includes(queryTxStatus || "")
+          ) {
+            paymentStatus = "failed";
+          }
+
+          if (paymentStatus !== "pending") {
+            await prisma.$transaction(async (tx) => {
+              const payment = await tx.payments.findFirst({
+                where: {
+                  OR: [
+                    { note: queryOrderId },
+                    { note: { startsWith: `${queryOrderId}|` } }
+                  ]
+                },
+              });
+
+              if (payment) {
+                await tx.payments.update({
+                  where: { id: payment.id },
+                  data: {
+                    payment_status: paymentStatus,
+                    payment_method: queryPaymentType || "credit_card",
+                    updated_at: new Date(),
+                  },
+                });
+
+                const orderStatus = paymentStatus === "paid" ? "paid" : "failed";
+                await tx.restaurant_orders.update({
+                  where: { id: targetId },
+                  data: {
+                    status: orderStatus,
+                    updated_at: new Date(),
+                  },
+                });
+              }
+            });
+          }
+        }
+      } catch (querySyncErr) {
+        console.error("Failed to sync restaurant payment from query params:", querySyncErr);
+      }
+    }
+
+    // 2. Sync pending payments for restaurant orders if guest via API check
+    if (authUser.role === "guest") {
+      try {
+        const pendingPayments = await prisma.payments.findMany({
+          where: {
+            payment_status: "pending",
+            restaurant_orders: {
+              guest_id: authUser.id,
+            },
+          },
+        });
+
+        for (const p of pendingPayments) {
+          if (p.note) {
+            const orderId = p.note.split("|")[0];
+            await syncTransactionStatus(orderId);
+          }
+        }
+      } catch (syncErr) {
+        console.error("Failed to auto-sync pending restaurant payments:", syncErr);
+      }
+    }
+
     let orders;
 
     if (authUser.role === "guest") {

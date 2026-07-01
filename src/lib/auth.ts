@@ -31,6 +31,28 @@ export function verifyToken(token: string): JWTPayload | null {
   }
 }
 
+export interface ResetPasswordPayload {
+  id: number;
+  email: string;
+  role: "guest" | "admin" | "management";
+  passwordHash: string;
+  purpose: "password-reset";
+}
+
+export function signResetToken(payload: Omit<ResetPasswordPayload, "purpose">): string {
+  return jwt.sign({ ...payload, purpose: "password-reset" }, JWT_SECRET, { expiresIn: "1h" });
+}
+
+export function verifyResetToken(token: string): ResetPasswordPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as ResetPasswordPayload;
+    if (decoded.purpose !== "password-reset") return null;
+    return decoded;
+  } catch (error) {
+    return null;
+  }
+}
+
 // Get user from request cookies (helper for API routes / middleware)
 export function getAuthUser(): JWTPayload | null {
   const cookieStore = cookies();
@@ -55,4 +77,30 @@ export function setAuthCookie(token: string) {
 export function deleteAuthCookie() {
   const cookieStore = cookies();
   cookieStore.delete("auth_token");
+}
+
+// Verify Google reCAPTCHA
+export async function verifyRecaptcha(token?: string): Promise<boolean> {
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secretKey || secretKey === "SET_YOUR_RECAPTCHA_SECRET_KEY" || !token || token === "mock-token") {
+    // If not configured or mock token used, allow
+    console.log("[MOCK RECAPTCHA] Bypassing verification");
+    return true;
+  }
+
+  try {
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: secretKey,
+        response: token,
+      }),
+    });
+    const data = await res.json();
+    return data.success && (data.score === undefined || data.score >= 0.5);
+  } catch (error) {
+    console.error("reCAPTCHA validation failed, falling back to false:", error);
+    return false;
+  }
 }

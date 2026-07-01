@@ -9,7 +9,8 @@ const isConfigured =
   serverKey &&
   clientKey &&
   serverKey !== "SET_YOUR_MIDTRANS_SERVER_KEY" &&
-  clientKey !== "SET_YOUR_MIDTRANS_CLIENT_KEY";
+  clientKey !== "SET_YOUR_MIDTRANS_CLIENT_KEY" &&
+  serverKey !== "";
 
 // Initialize Snap if configured
 let snap: any = null;
@@ -45,6 +46,12 @@ export async function createTransaction(params: MidtransParams) {
   }
 
   try {
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const isResto = params.orderId.startsWith("RESTO-");
+    const finishUrl = isResto
+      ? `${appUrl}/my-bookings?payment=resto-success`
+      : `${appUrl}/my-bookings?payment=success`;
+
     const transaction = await snap.createTransaction({
       transaction_details: {
         order_id: params.orderId,
@@ -54,6 +61,11 @@ export async function createTransaction(params: MidtransParams) {
         first_name: params.customerDetails.first_name,
         email: params.customerDetails.email,
         phone: params.customerDetails.phone,
+      },
+      callbacks: {
+        finish: finishUrl,
+        unfinish: `${appUrl}/my-bookings`,
+        error: `${appUrl}/my-bookings`,
       },
     });
 
@@ -93,5 +105,109 @@ export function verifyWebhookSignature(body: any): boolean {
   } catch (error) {
     console.error("Signature verification failed:", error);
     return false;
+  }
+}
+
+export async function syncTransactionStatus(orderId: string): Promise<string> {
+  if (!isConfigured) {
+    return "pending";
+  }
+
+  // Import prisma dynamically to prevent any possible early load circular dependency issues
+  const prisma = (await import("@/lib/prisma")).default;
+
+  try {
+    const authString = Buffer.from(`${serverKey}:`).toString("base64");
+    const res = await fetch(`https://api.sandbox.midtrans.com/v2/${orderId}/status`, {
+      headers: {
+        Authorization: `Basic ${authString}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      console.warn(`Midtrans status check for ${orderId} returned status ${res.status}`);
+      return "pending";
+    }
+
+    const body = await res.json();
+    const { transaction_status, payment_type } = body;
+
+    // Parse order_id format: e.g., "BOOKING-12-178127928" or "RESTO-5-178127928"
+    const parts = orderId.split("-");
+    const prefix = parts[0];
+    const targetId = parseInt(parts[1]);
+
+    if (!prefix || isNaN(targetId)) {
+      console.warn("[SYNC ERROR] Invalid order_id format:", orderId);
+      return "pending";
+    }
+
+    // Determine status
+    let paymentStatus: "paid" | "failed" | "pending" = "pending";
+    if (transaction_status === "settlement" || transaction_status === "capture") {
+      paymentStatus = "paid";
+    } else if (["expire", "cancel", "deny"].includes(transaction_status)) {
+      paymentStatus = "failed";
+    }
+
+    if (paymentStatus === "pending") {
+      return "pending";
+    }
+
+    console.log(`[SYNC PROGRESS] Updating order ${orderId} (Type: ${prefix}, ID: ${targetId}) to PaymentStatus: ${paymentStatus}`);
+
+    // Perform database updates inside transaction
+    await prisma.$transaction(async (tx) => {
+      // Find the payment record
+      const payment = await tx.payments.findFirst({
+        where: {
+          OR: [
+            { note: orderId },
+            { note: { startsWith: `${orderId}|` } }
+          ]
+        },
+      });
+
+      if (!payment) {
+        throw new Error(`PAYMENT_RECORD_NOT_FOUND`);
+      }
+
+      await tx.payments.update({
+        where: { id: payment.id },
+        data: {
+          payment_status: paymentStatus,
+          payment_method: payment_type || "credit_card",
+          updated_at: new Date(),
+        },
+      });
+
+      // Update parent table (bookings or restaurant_orders)
+      if (prefix === "BOOKING") {
+        const bookingStatus = paymentStatus === "paid" ? "confirmed" : "cancelled";
+        await tx.bookings.update({
+          where: { id: targetId },
+          data: {
+            status: bookingStatus,
+            updated_at: new Date(),
+          },
+        });
+      } else if (prefix === "RESTO") {
+        const orderStatus = paymentStatus === "paid" ? "paid" : "failed";
+        await tx.restaurant_orders.update({
+          where: { id: targetId },
+          data: {
+            status: orderStatus,
+            updated_at: new Date(),
+          },
+        });
+      }
+    });
+
+    return paymentStatus;
+  } catch (error: any) {
+    console.error("Sync transaction status error:", error);
+    return "pending";
   }
 }

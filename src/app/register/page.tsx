@@ -3,16 +3,16 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Hotel, User, Mail, Lock, Phone, CreditCard, Sparkles, CheckCircle } from "lucide-react";
+import { Hotel, User, Mail, Lock, Sparkles, CheckCircle, Phone, CreditCard } from "lucide-react";
 
 export default function Register() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     phone: "",
-    identity_number: "",
+    identityNumber: "",
+    password: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -160,6 +160,48 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Nomor Telepon */}
+            <div>
+              <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
+                Nomor Telepon
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-heritage-gold-500">
+                  <Phone className="h-4 w-4" />
+                </div>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  placeholder="081234567890"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
+                />
+              </div>
+            </div>
+
+            {/* Nomor Identitas (KTP) */}
+            <div>
+              <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
+                Nomor Identitas (KTP / Passport)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-heritage-gold-500">
+                  <CreditCard className="h-4 w-4" />
+                </div>
+                <input
+                  type="text"
+                  name="identityNumber"
+                  required
+                  placeholder="3273012345678901"
+                  value={formData.identityNumber}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
+                />
+              </div>
+            </div>
+
             {/* Password */}
             <div>
               <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
@@ -175,48 +217,6 @@ export default function Register() {
                   required
                   placeholder="••••••••"
                   value={formData.password}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
-                />
-              </div>
-            </div>
-
-            {/* Telepon */}
-            <div>
-              <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
-                Nomor Telepon
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-heritage-gold-500">
-                  <Phone className="h-4 w-4" />
-                </div>
-                <input
-                  type="text"
-                  name="phone"
-                  required
-                  placeholder="08123456789"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
-                />
-              </div>
-            </div>
-
-            {/* Identitas */}
-            <div>
-              <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
-                Nomor KTP / Paspor
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-heritage-gold-500">
-                  <CreditCard className="h-4 w-4" />
-                </div>
-                <input
-                  type="text"
-                  name="identity_number"
-                  required
-                  placeholder="3404123456780001"
-                  value={formData.identity_number}
                   onChange={handleChange}
                   className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
                 />

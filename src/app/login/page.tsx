@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Hotel, Mail, Lock, User, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
+import ReCAPTCHA from "react-google-recaptcha";
 
 import { Suspense } from "react";
 
@@ -23,6 +24,8 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = React.useRef<ReCAPTCHA>(null);
 
   // Check check verified parameter
   useEffect(() => {
@@ -41,19 +44,30 @@ function LoginContent() {
     setLoading(true);
     setError(null);
 
+    if (!isStaff && !recaptchaToken) {
+      setError("Silakan centang reCAPTCHA terlebih dahulu.");
+      setLoading(false);
+      return;
+    }
+
     const endpoint = isStaff ? "/api/auth/staff/login" : "/api/auth/guest/login";
 
     try {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          recaptchaToken,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.message || "Gagal masuk");
+        recaptchaRef.current?.reset();
+        setRecaptchaToken(null);
       } else {
         // Save session in AuthContext
         login(data.user);
@@ -73,6 +87,8 @@ function LoginContent() {
     } catch (err) {
       console.error(err);
       setError("Terjadi kesalahan koneksi");
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -99,6 +115,8 @@ function LoginContent() {
             onClick={() => {
               setIsStaff(false);
               setError(null);
+              setRecaptchaToken(null);
+              recaptchaRef.current?.reset();
             }}
             className={`flex-1 py-2 text-xs font-bold tracking-wide rounded-md transition-all duration-200 ${
               !isStaff
@@ -113,6 +131,8 @@ function LoginContent() {
             onClick={() => {
               setIsStaff(true);
               setError(null);
+              setRecaptchaToken(null);
+              recaptchaRef.current?.reset();
             }}
             className={`flex-1 py-2 text-xs font-bold tracking-wide rounded-md transition-all duration-200 ${
               isStaff
@@ -166,6 +186,9 @@ function LoginContent() {
               <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider">
                 Password
               </label>
+              <Link href="/forgot-password" className="text-xs text-heritage-gold-500 hover:underline font-semibold transition-colors duration-200">
+                Lupa Password?
+              </Link>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-heritage-gold-500">
@@ -197,6 +220,17 @@ function LoginContent() {
               <label htmlFor="rememberMe" className="ml-2 block text-xs text-heritage-green-800/80 font-semibold uppercase tracking-wide">
                 Ingat Saya (Remember Me)
               </label>
+            </div>
+          )}
+
+          {/* reCAPTCHA Checkbox */}
+          {!isStaff && (
+            <div className="flex justify-center my-4">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={process.env.RECAPTCHA_SITE_KEY || ""}
+                onChange={(token) => setRecaptchaToken(token)}
+              />
             </div>
           )}
 

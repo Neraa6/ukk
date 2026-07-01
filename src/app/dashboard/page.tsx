@@ -20,6 +20,8 @@ import {
   Settings,
   ShieldCheck,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   AreaChart,
   Area,
@@ -107,6 +109,199 @@ export default function Dashboard() {
 
   // Form error states
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/dashboard/export");
+      if (!res.ok) throw new Error("Gagal mengambil data laporan");
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Gagal memproses data laporan");
+
+      const payments = data.payments;
+
+      // 1. Initialize jsPDF (A4 size, portrait)
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // 2. Draw Premium Header Banner
+      doc.setFillColor(29, 59, 43); // Heritage Green (RGB)
+      doc.rect(15, 15, 180, 24, "F");
+
+      // Draw Gold Accent Line
+      doc.setDrawColor(197, 168, 128); // Heritage Gold (RGB)
+      doc.setLineWidth(0.8);
+      doc.line(15, 39, 195, 39);
+
+      // Title & Text on Banner
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("drgHotel", 20, 24);
+
+      doc.setTextColor(197, 168, 128);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.text("Elegant Heritage Hotel", 20, 29);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("LAPORAN TRANSAKSI INTERNAL", 190, 25, { align: "right" });
+
+      doc.setTextColor(229, 223, 213);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 190, 31, { align: "right" });
+
+      // 3. Summary Metadata Section
+      const totalTransactions = payments.length;
+      const totalRevenue = payments
+        .filter((p: any) => p.payment_status === "paid")
+        .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+
+      doc.setTextColor(13, 31, 21);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("Rangkuman Laporan", 15, 48);
+
+      doc.setDrawColor(229, 223, 213);
+      doc.setLineWidth(0.2);
+      doc.line(15, 51, 195, 51);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(74, 93, 78);
+      doc.text("Total Transaksi:", 15, 57);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(13, 31, 21);
+      doc.text(totalTransactions.toString(), 45, 57);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(74, 93, 78);
+      doc.text("Total Pendapatan (Lunas):", 70, 57);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(29, 59, 43);
+      doc.text(`IDR ${totalRevenue.toLocaleString("id-ID")}`, 108, 57);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(74, 93, 78);
+      doc.text("Petugas Pengunduh:", 145, 57);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(13, 31, 21);
+      doc.text(user?.name || "-", 175, 57);
+
+      // 4. Prepare Table Data for autotable
+      const tableHeaders = [
+        ["ID", "Tanggal", "Layanan", "Pelanggan", "Detail Layanan", "Total (IDR)", "Status"]
+      ];
+
+      const tableRows = payments.map((payment: any) => {
+        const dateStr = payment.created_at.split("T")[0];
+        const amountStr = Number(payment.amount).toLocaleString("id-ID");
+        
+        let serviceType = "";
+        let customerName = "";
+        let details = "";
+
+        if (payment.booking_id !== null && payment.bookings) {
+          serviceType = "Kamar";
+          customerName = payment.bookings.guests.name;
+          details = `Kamar ${payment.bookings.rooms.room_number} (${payment.bookings.rooms.room_types.name})`;
+        } else if (payment.restaurant_order_id !== null && payment.restaurant_orders) {
+          serviceType = "Restoran";
+          customerName = payment.restaurant_orders.guests.name;
+          details = `Pesanan Restoran #${payment.restaurant_order_id}`;
+        } else {
+          serviceType = "Lainnya";
+          customerName = "-";
+          details = payment.note || "-";
+        }
+
+        return [
+          payment.id.toString(),
+          dateStr,
+          serviceType,
+          customerName,
+          details,
+          amountStr,
+          payment.payment_status.toUpperCase(),
+        ];
+      });
+
+      // 5. Render Table using jspdf-autotable
+      autoTable(doc, {
+        startY: 65,
+        head: tableHeaders,
+        body: tableRows,
+        theme: "striped",
+        headStyles: {
+          fillColor: [29, 59, 43], // Heritage Green
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8,
+          valign: "middle",
+          halign: "left",
+        },
+        columnStyles: {
+          0: { cellWidth: 10 }, // ID
+          1: { cellWidth: 20 }, // Tanggal
+          2: { cellWidth: 20 }, // Layanan
+          3: { cellWidth: 35 }, // Pelanggan
+          4: { cellWidth: 50 }, // Detail
+          5: { cellWidth: 28, halign: "right" }, // Total
+          6: { cellWidth: 17, halign: "center" }, // Status
+        },
+        styles: {
+          fontSize: 7.5,
+          font: "helvetica",
+          cellPadding: 2,
+        },
+        alternateRowStyles: {
+          fillColor: [252, 251, 247], // Light cream zebra stripes
+        },
+        didParseCell: (data) => {
+          if (data.column.index === 6 && data.cell.section === "body") {
+            const status = data.cell.raw as string;
+            if (status === "PAID") {
+              data.cell.styles.textColor = [21, 128, 61];
+            } else if (status === "FAILED") {
+              data.cell.styles.textColor = [185, 28, 28];
+            } else {
+              data.cell.styles.textColor = [169, 137, 92];
+            }
+            data.cell.styles.fontStyle = "bold";
+          }
+        },
+        didDrawPage: (data) => {
+          // Footer
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(6.5);
+          doc.setTextColor(138, 158, 143);
+          doc.text("drgHotel - Laporan Transaksi Rahasia", 15, 287);
+          doc.text(
+            `Halaman ${data.pageNumber}`,
+            195,
+            287,
+            { align: "right" }
+          );
+        },
+      });
+
+      // 6. Save PDF
+      doc.save(`drgHotel-Laporan-Transaksi-${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Gagal mengunduh laporan PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -410,14 +605,19 @@ export default function Dashboard() {
           </div>
 
           <div className="flex gap-3 w-full md:w-auto">
-            {/* CSV Export Button (Epic E) */}
-            <a
-              href="/api/dashboard/export"
-              className="flex-1 md:flex-initial bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 font-bold px-5 py-2.5 rounded tracking-wide shadow flex items-center justify-center gap-2 text-sm border border-heritage-gold-400/20"
+            {/* PDF Export Button (Epic E) */}
+            <button
+              onClick={handleDownloadPDF}
+              disabled={exporting}
+              className="flex-1 md:flex-initial bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 font-bold px-5 py-2.5 rounded tracking-wide shadow flex items-center justify-center gap-2 text-sm border border-heritage-gold-400/20 disabled:opacity-50"
             >
-              <FileSpreadsheet className="h-4 w-4 text-heritage-gold-400" />
-              <span>Unduh CSV Transaksi</span>
-            </a>
+              {exporting ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-heritage-gold-400 border-t-transparent"></div>
+              ) : (
+                <Download className="h-4 w-4 text-heritage-gold-400" />
+              )}
+              <span>{exporting ? "Mengunduh..." : "Unduh PDF Laporan"}</span>
+            </button>
           </div>
         </div>
 

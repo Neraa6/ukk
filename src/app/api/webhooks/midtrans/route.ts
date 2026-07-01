@@ -39,10 +39,13 @@ export async function POST(request: Request) {
     // Perform database updates inside transaction
     await prisma.$transaction(async (tx) => {
       // 2. Update Payments table
-      // In the payments table, we search by `note` column which stores the full order_id (e.g. BOOKING-12-12345)
+      // In the payments table, we search by `note` column which stores the full order_id (e.g. BOOKING-12-12345) or order_id|redirect_url
       const payment = await tx.payments.findFirst({
         where: {
-          note: order_id,
+          OR: [
+            { note: order_id },
+            { note: { startsWith: `${order_id}|` } },
+          ],
         },
       });
 

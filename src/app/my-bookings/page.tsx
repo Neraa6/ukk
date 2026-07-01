@@ -72,7 +72,7 @@ function MyBookingsContent() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/bookings");
+      const res = await fetch(`/api/bookings${window.location.search}`);
       if (!res.ok) {
         throw new Error("Gagal mengambil data dari server");
       }
@@ -328,9 +328,17 @@ function MyBookingsContent() {
                       {isPendingPayment && !isOffline && (
                         <button
                           onClick={() => {
-                            // Redirect to payment snapshot redirect page (which handles mock checkout in sandbox)
-                            const mockUrl = `/payments/mock-checkout?token=MOCK-SNAP-TOKEN-${booking.id}&order_id=${payment.note}&amount=${booking.total_price}&email=${encodeURIComponent(user.email)}`;
-                            router.push(mockUrl);
+                            const noteParts = payment.note ? payment.note.split("|") : [];
+                            const realRedirectUrl = noteParts[1];
+                            
+                            if (realRedirectUrl) {
+                              // Redirect to real Midtrans payment page
+                              window.location.href = realRedirectUrl;
+                            } else {
+                              const orderId = noteParts[0] || `BOOKING-${booking.id}`;
+                              const mockUrl = `/payments/mock-checkout?token=MOCK-SNAP-TOKEN-${booking.id}&order_id=${orderId}&amount=${booking.total_price}&email=${encodeURIComponent(user.email)}`;
+                              router.push(mockUrl);
+                            }
                           }}
                           className="w-full bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 font-bold py-2.5 px-4 rounded text-xs tracking-wide shadow-sm transition-colors text-center"
                         >
