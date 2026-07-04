@@ -27,7 +27,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const authUser = getAuthUser();
-  if (!authUser || authUser.role !== "management") {
+  if (!authUser || authUser.role !== "admin") {
     return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
   }
 

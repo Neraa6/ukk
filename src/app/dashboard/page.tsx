@@ -573,6 +573,7 @@ export default function Dashboard() {
   }
 
   const isManagement = user?.role === "management";
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="bg-heritage-cream-100 min-h-screen py-24 px-4 sm:px-6 lg:px-8">
@@ -606,18 +607,20 @@ export default function Dashboard() {
 
           <div className="flex gap-3 w-full md:w-auto">
             {/* PDF Export Button (Epic E) */}
-            <button
-              onClick={handleDownloadPDF}
-              disabled={exporting}
-              className="flex-1 md:flex-initial bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 font-bold px-5 py-2.5 rounded tracking-wide shadow flex items-center justify-center gap-2 text-sm border border-heritage-gold-400/20 disabled:opacity-50"
-            >
-              {exporting ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-heritage-gold-400 border-t-transparent"></div>
-              ) : (
-                <Download className="h-4 w-4 text-heritage-gold-400" />
-              )}
-              <span>{exporting ? "Mengunduh..." : "Unduh PDF Laporan"}</span>
-            </button>
+            {isManagement && (
+              <button
+                onClick={handleDownloadPDF}
+                disabled={exporting}
+                className="flex-1 md:flex-initial bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 font-bold px-5 py-2.5 rounded tracking-wide shadow flex items-center justify-center gap-2 text-sm border border-heritage-gold-400/20 disabled:opacity-50"
+              >
+                {exporting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-heritage-gold-400 border-t-transparent"></div>
+                ) : (
+                  <Download className="h-4 w-4 text-heritage-gold-400" />
+                )}
+                <span>{exporting ? "Mengunduh..." : "Unduh PDF Laporan"}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -919,41 +922,47 @@ export default function Dashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center gap-2">
-                            {/* Check-In Action Button */}
-                            {isConfirmed && (
-                              <button
-                                onClick={() => handleBookingAction(booking.id, "check-in")}
-                                disabled={actionLoading !== null}
-                                className="bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 text-xs font-bold px-3 py-1.5 rounded transition-all"
-                              >
-                                {actionLoading === booking.id ? "..." : "Check-In"}
-                              </button>
-                            )}
+                            {isAdmin ? (
+                              <>
+                                {/* Check-In Action Button */}
+                                {isConfirmed && (
+                                  <button
+                                    onClick={() => handleBookingAction(booking.id, "check-in")}
+                                    disabled={actionLoading !== null}
+                                    className="bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 text-xs font-bold px-3 py-1.5 rounded transition-all"
+                                  >
+                                    {actionLoading === booking.id ? "..." : "Check-In"}
+                                  </button>
+                                )}
 
-                            {/* Check-Out Action Button */}
-                            {isCheckedIn && (
-                              <button
-                                onClick={() => handleBookingAction(booking.id, "check-out")}
-                                disabled={actionLoading !== null}
-                                className="bg-heritage-gold-400 hover:bg-heritage-gold-500 text-heritage-green-900 text-xs font-bold px-3 py-1.5 rounded transition-all"
-                              >
-                                {actionLoading === booking.id ? "..." : "Check-Out"}
-                              </button>
-                            )}
+                                {/* Check-Out Action Button */}
+                                {isCheckedIn && (
+                                  <button
+                                    onClick={() => handleBookingAction(booking.id, "check-out")}
+                                    disabled={actionLoading !== null}
+                                    className="bg-heritage-gold-400 hover:bg-heritage-gold-500 text-heritage-green-900 text-xs font-bold px-3 py-1.5 rounded transition-all"
+                                  >
+                                    {actionLoading === booking.id ? "..." : "Check-Out"}
+                                  </button>
+                                )}
 
-                            {/* Cancel Button */}
-                            {(booking.status === "pending" || booking.status === "confirmed") && (
-                              <button
-                                onClick={() => handleBookingAction(booking.id, "cancel")}
-                                disabled={actionLoading !== null}
-                                className="text-rose-600 hover:text-rose-800 text-xs font-bold px-2.5 py-1.5 rounded hover:bg-rose-50 transition-colors"
-                              >
-                                Batal
-                              </button>
-                            )}
+                                {/* Cancel Button */}
+                                {(booking.status === "pending" || booking.status === "confirmed") && (
+                                  <button
+                                    onClick={() => handleBookingAction(booking.id, "cancel")}
+                                    disabled={actionLoading !== null}
+                                    className="text-rose-600 hover:text-rose-800 text-xs font-bold px-2.5 py-1.5 rounded hover:bg-rose-50 transition-colors"
+                                  >
+                                    Batal
+                                  </button>
+                                )}
 
-                            {!isConfirmed && !isCheckedIn && booking.status !== "pending" && (
-                              <span className="text-xs text-heritage-green-800/40 italic">- Selesai -</span>
+                                {!isConfirmed && !isCheckedIn && booking.status !== "pending" && (
+                                  <span className="text-xs text-heritage-green-800/40 italic">- Selesai -</span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-xs text-heritage-green-800/40 italic">Hanya Pantau</span>
                             )}
                           </div>
                         </td>
@@ -970,12 +979,12 @@ export default function Dashboard() {
         {activeTab === "rooms" && (
           <div className="space-y-8 animate-fade-in">
             {/* Room Types CRUD */}
-            {isManagement && (
-              <div className="bg-white rounded-lg border border-heritage-gold-400/10 shadow p-6">
-                <div className="flex justify-between items-center border-b border-heritage-gold-400/10 pb-4 mb-6">
-                  <h3 className="font-serif text-2xl font-bold text-heritage-green-950">
-                    Master Tipe Kamar (Room Types)
-                  </h3>
+            <div className="bg-white rounded-lg border border-heritage-gold-400/10 shadow p-6">
+              <div className="flex justify-between items-center border-b border-heritage-gold-400/10 pb-4 mb-6">
+                <h3 className="font-serif text-2xl font-bold text-heritage-green-950">
+                  Master Tipe Kamar (Room Types)
+                </h3>
+                {isAdmin && (
                   <button
                     onClick={() => {
                       setEditingType(null);
@@ -988,22 +997,24 @@ export default function Dashboard() {
                     <Plus className="h-4 w-4" />
                     Tambah Tipe
                   </button>
-                </div>
+                )}
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {roomTypes.map((type) => (
-                    <div key={type.id} className="border border-heritage-gold-400/20 rounded-lg overflow-hidden flex flex-col justify-between bg-heritage-cream-50/20 shadow-sm">
-                      <div
-                        className="h-32 bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url('${type.foto_url || "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&q=80&w=400"}')`,
-                        }}
-                      />
-                      <div className="p-4 space-y-2 flex-grow">
-                        <h4 className="font-serif text-lg font-bold text-heritage-green-950">{type.name}</h4>
-                        <p className="text-xs text-heritage-green-900/60 line-clamp-3 leading-relaxed">{type.description}</p>
-                        <p className="text-sm font-bold text-heritage-green-950">{formatCurrency(Number(type.price))} / malam</p>
-                      </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {roomTypes.map((type) => (
+                  <div key={type.id} className="border border-heritage-gold-400/20 rounded-lg overflow-hidden flex flex-col justify-between bg-heritage-cream-50/20 shadow-sm">
+                    <div
+                      className="h-32 bg-cover bg-center"
+                      style={{
+                        backgroundImage: `url('${type.foto_url || "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&q=80&w=400"}')`,
+                      }}
+                    />
+                    <div className="p-4 space-y-2 flex-grow">
+                      <h4 className="font-serif text-lg font-bold text-heritage-green-950">{type.name}</h4>
+                      <p className="text-xs text-heritage-green-900/60 line-clamp-3 leading-relaxed">{type.description}</p>
+                      <p className="text-sm font-bold text-heritage-green-950">{formatCurrency(Number(type.price))} / malam</p>
+                    </div>
+                    {isAdmin && (
                       <div className="p-4 bg-heritage-cream-100/50 border-t border-heritage-gold-400/10 flex justify-end gap-2">
                         <button
                           onClick={() => {
@@ -1028,11 +1039,11 @@ export default function Dashboard() {
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
             {/* Rooms CRUD Grid */}
             <div className="bg-white rounded-lg border border-heritage-gold-400/10 shadow p-6">
@@ -1040,22 +1051,24 @@ export default function Dashboard() {
                 <h3 className="font-serif text-2xl font-bold text-heritage-green-950">
                   Kamar Fisik (Rooms)
                 </h3>
-                <button
-                  onClick={() => {
-                    setEditingRoom(null);
-                    setRoomForm({
-                      room_number: "",
-                      room_type_id: roomTypes[0]?.id ? String(roomTypes[0].id) : "",
-                      status: "available",
-                    });
-                    setFormError(null);
-                    setShowRoomModal(true);
-                  }}
-                  className="bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 text-xs font-bold px-4 py-2 rounded shadow flex items-center gap-1.5"
-                >
-                  <Plus className="h-4 w-4" />
-                  Tambah Kamar
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setEditingRoom(null);
+                      setRoomForm({
+                        room_number: "",
+                        room_type_id: roomTypes[0]?.id ? String(roomTypes[0].id) : "",
+                        status: "available",
+                      });
+                      setFormError(null);
+                      setShowRoomModal(true);
+                    }}
+                    className="bg-heritage-green-800 hover:bg-heritage-green-900 text-heritage-gold-100 text-xs font-bold px-4 py-2 rounded shadow flex items-center gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Tambah Kamar
+                  </button>
+                )}
               </div>
 
               <div className="overflow-x-auto">
@@ -1090,27 +1103,33 @@ export default function Dashboard() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-3">
-                            <button
-                              onClick={() => {
-                                setEditingRoom(room);
-                                setRoomForm({
-                                  room_number: room.room_number,
-                                  room_type_id: String(room.room_type_id),
-                                  status: room.status,
-                                });
-                                setFormError(null);
-                                setShowRoomModal(true);
-                              }}
-                              className="text-heritage-green-900 hover:text-heritage-gold-500"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRoom(room.id)}
-                              className="text-rose-600 hover:text-rose-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {isAdmin ? (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setEditingRoom(room);
+                                    setRoomForm({
+                                      room_number: room.room_number,
+                                      room_type_id: String(room.room_type_id),
+                                      status: room.status,
+                                    });
+                                    setFormError(null);
+                                    setShowRoomModal(true);
+                                  }}
+                                  className="text-heritage-green-900 hover:text-heritage-gold-500"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRoom(room.id)}
+                                  className="text-rose-600 hover:text-rose-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-xs text-heritage-green-800/40 italic">-</span>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1129,7 +1148,7 @@ export default function Dashboard() {
               <h3 className="font-serif text-2xl font-bold text-heritage-green-950">
                 Menu Makanan Restoran (Master Data)
               </h3>
-              {isManagement && (
+              {isAdmin && (
                 <button
                   onClick={() => {
                     setEditingMenu(null);
@@ -1159,7 +1178,7 @@ export default function Dashboard() {
                     <p className="text-xs text-heritage-green-900/60 line-clamp-3 leading-relaxed">{menu.description}</p>
                     <p className="text-sm font-bold text-heritage-green-950">{formatCurrency(Number(menu.price))}</p>
                   </div>
-                  {isManagement && (
+                  {isAdmin && (
                     <div className="p-4 bg-heritage-cream-100/50 border-t border-heritage-gold-400/10 flex justify-end gap-2">
                       <button
                         onClick={() => {

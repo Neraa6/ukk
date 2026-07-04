@@ -7,8 +7,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const authUser = getAuthUser();
-  if (!authUser || authUser.role === "guest") {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!authUser || authUser.role !== "admin") {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
   }
 
   const bookingId = parseInt(params.id);

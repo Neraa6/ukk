@@ -27,8 +27,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const authUser = getAuthUser();
-  if (!authUser || authUser.role !== "management") {
-    return NextResponse.json({ message: "Unauthorized. Hanya management yang diizinkan." }, { status: 403 });
+  if (!authUser || authUser.role !== "admin") {
+    return NextResponse.json({ message: "Unauthorized. Hanya admin yang diizinkan." }, { status: 403 });
   }
 
   try {

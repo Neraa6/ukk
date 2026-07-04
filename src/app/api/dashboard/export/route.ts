@@ -4,7 +4,7 @@ import { getAuthUser } from "@/lib/auth";
 
 export async function GET() {
   const authUser = getAuthUser();
-  if (!authUser || (authUser.role !== "admin" && authUser.role !== "management")) {
+  if (!authUser || authUser.role !== "management") {
     return new Response("Forbidden", { status: 403 });
   }
 

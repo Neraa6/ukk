@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: ukk-hotel-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: drg_hotel
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      interval: 5s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ukk-hotel-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:@db:3306/drg_hotel
+      - JWT_SECRET=${JWT_SECRET:-drghotel_super_secret_jwt_key_2026}
+      - APP_URL=${APP_URL:-http://localhost:3000}
+      - MIDTRANS_SERVER_KEY=${MIDTRANS_SERVER_KEY:-Mid-server-U8FEIqKAaIL1fgWRRKLcX9ff}
+      - MIDTRANS_CLIENT_KEY=${MIDTRANS_CLIENT_KEY:-Mid-client-Vz42tjsBUBQlAYmI}
+      - RECAPTCHA_SITE_KEY=${RECAPTCHA_SITE_KEY:-6Le_0jstAAAAAKFydyK9CXft0oDUKa0sMCg3hGbT}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY:-6Le_0jstAAAAAP1YK0x5tzA3ZPirOXSRRLs2e6hp}
+      - GMAIL_USER=${GMAIL_USER:-yusufregan06@gmail.com}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD:-ztlh nllz ikie rcsm}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

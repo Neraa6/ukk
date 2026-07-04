@@ -256,6 +256,52 @@ export async function GET(request: Request) {
               }
             });
           }
+        } else if (prefix === "RESTO" && !isNaN(targetId)) {
+          let paymentStatus: "paid" | "failed" | "pending" = "pending";
+          if (
+            queryTxStatus === "settlement" ||
+            queryTxStatus === "capture" ||
+            queryStatusCode === "200"
+          ) {
+            paymentStatus = "paid";
+          } else if (
+            ["expire", "cancel", "deny"].includes(queryTxStatus || "")
+          ) {
+            paymentStatus = "failed";
+          }
+
+          if (paymentStatus !== "pending") {
+            await prisma.$transaction(async (tx) => {
+              const payment = await tx.payments.findFirst({
+                where: {
+                  OR: [
+                    { note: queryOrderId },
+                    { note: { startsWith: `${queryOrderId}|` } }
+                  ]
+                },
+              });
+
+              if (payment) {
+                await tx.payments.update({
+                  where: { id: payment.id },
+                  data: {
+                    payment_status: paymentStatus,
+                    payment_method: queryPaymentType || "credit_card",
+                    updated_at: new Date(),
+                  },
+                });
+
+                const orderStatus = paymentStatus === "paid" ? "paid" : "failed";
+                await tx.restaurant_orders.update({
+                  where: { id: targetId },
+                  data: {
+                    status: orderStatus,
+                    updated_at: new Date(),
+                  },
+                });
+              }
+            });
+          }
         }
       } catch (querySyncErr) {
         console.error("Failed to sync payment from query params:", querySyncErr);
@@ -275,6 +321,22 @@ export async function GET(request: Request) {
         });
 
         for (const p of pendingPayments) {
+          if (p.note) {
+            const orderId = p.note.split("|")[0];
+            await syncTransactionStatus(orderId);
+          }
+        }
+
+        const pendingRestoPayments = await prisma.payments.findMany({
+          where: {
+            payment_status: "pending",
+            restaurant_orders: {
+              guest_id: authUser.id,
+            },
+          },
+        });
+
+        for (const p of pendingRestoPayments) {
           if (p.note) {
             const orderId = p.note.split("|")[0];
             await syncTransactionStatus(orderId);

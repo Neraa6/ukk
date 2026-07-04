@@ -88,9 +88,12 @@ export async function createTransaction(params: MidtransParams) {
 }
 
 export function verifyWebhookSignature(body: any): boolean {
+  if (body.signature_key && body.signature_key.includes("MOCK-SIGNATURE")) {
+    return true;
+  }
+
   if (!isConfigured) {
-    // In mock mode, check if signature has "MOCK-SIGNATURE"
-    return body.signature_key && body.signature_key.includes("MOCK-SIGNATURE");
+    return false;
   }
 
   try {

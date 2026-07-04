@@ -15,8 +15,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const authUser = getAuthUser();
-  if (!authUser || authUser.role !== "management") {
-    return NextResponse.json({ message: "Unauthorized. Hanya management yang diizinkan." }, { status: 403 });
+  if (!authUser || authUser.role !== "admin") {
+    return NextResponse.json({ message: "Unauthorized. Hanya admin yang diizinkan." }, { status: 403 });
   }
 
   const menuId = parseInt(params.id);
@@ -75,8 +75,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const authUser = getAuthUser();
-  if (!authUser || authUser.role !== "management") {
-    return NextResponse.json({ message: "Unauthorized. Hanya management yang diizinkan." }, { status: 403 });
+  if (!authUser || authUser.role !== "admin") {
+    return NextResponse.json({ message: "Unauthorized. Hanya admin yang diizinkan." }, { status: 403 });
   }
 
   const menuId = parseInt(params.id);
