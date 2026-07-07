@@ -1,37 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Hotel, Mail, Lock, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
-import ReCAPTCHA from "react-google-recaptcha";
+import { Hotel, Mail, Lock, Sparkles, ShieldAlert } from "lucide-react";
 import { Suspense } from "react";
 
-function LoginContent() {
+function AdminLoginContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = React.useRef<ReCAPTCHA>(null);
-
-  useEffect(() => {
-    if (searchParams.get("verified") === "true") {
-      setSuccess("Email Anda berhasil diverifikasi! Silakan masuk.");
-    }
-  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,42 +30,24 @@ function LoginContent() {
     setLoading(true);
     setError(null);
 
-    if (!recaptchaToken) {
-      setError("Silakan centang reCAPTCHA terlebih dahulu.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch("/api/auth/guest/login", {
+      const res = await fetch("/api/auth/staff/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          recaptchaToken,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.message || "Gagal masuk");
-        recaptchaRef.current?.reset();
-        setRecaptchaToken(null);
       } else {
         login(data.user);
-
-        if (!data.user.emailVerified) {
-          setError("Email Anda belum diverifikasi. Silakan periksa kotak masuk email Anda.");
-          return;
-        }
-        router.push("/catalog");
+        router.push("/dashboard");
       }
     } catch (err) {
       console.error(err);
       setError("Terjadi kesalahan koneksi");
-      recaptchaRef.current?.reset();
-      setRecaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -86,7 +59,7 @@ function LoginContent() {
         <div className="text-center mb-8">
           <Hotel className="h-10 w-10 text-heritage-gold-400 mx-auto mb-3" />
           <h2 className="font-serif text-3xl font-bold text-heritage-green-900">
-            Masuk Akun Tamu
+            Masuk Panel Internal
           </h2>
           <p className="text-sm text-heritage-green-800/60 mt-1 font-sans">
             Sistem Informasi drgHotel
@@ -94,13 +67,6 @@ function LoginContent() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-800 text-xs px-3 py-2.5 rounded flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
-              <span>{success}</span>
-            </div>
-          )}
-
           {error && (
             <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-3 py-2.5 rounded flex items-center gap-2">
               <ShieldAlert className="h-4 w-4 shrink-0 text-rose-600" />
@@ -120,7 +86,7 @@ function LoginContent() {
                 type="email"
                 name="email"
                 required
-                placeholder="budi@example.com"
+                placeholder="admin@drghotel.com"
                 value={formData.email}
                 onChange={handleChange}
                 className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
@@ -133,9 +99,6 @@ function LoginContent() {
               <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider">
                 Password
               </label>
-              <Link href="/forgot-password" className="text-xs text-heritage-gold-500 hover:underline font-semibold transition-colors duration-200">
-                Lupa Password?
-              </Link>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-heritage-gold-500">
@@ -153,12 +116,18 @@ function LoginContent() {
             </div>
           </div>
 
-          <div className="flex justify-center my-4">
-            <ReCAPTCHA
-              ref={recaptchaRef}
-              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || process.env.RECAPTCHA_SITE_KEY || ""}
-              onChange={(token) => setRecaptchaToken(token)}
+          <div className="flex items-center">
+            <input
+              id="rememberMe"
+              name="rememberMe"
+              type="checkbox"
+              checked={formData.rememberMe}
+              onChange={handleChange}
+              className="h-4 w-4 text-heritage-green-700 border-heritage-gold-400/30 rounded focus:ring-heritage-green-700"
             />
+            <label htmlFor="rememberMe" className="ml-2 block text-xs text-heritage-green-800/80 font-semibold uppercase tracking-wide">
+              Ingat Saya (Remember Me)
+            </label>
           </div>
 
           <button
@@ -182,18 +151,12 @@ function LoginContent() {
             </span>
             <ul className="text-xs text-heritage-green-900/80 space-y-1.5 font-sans leading-relaxed">
               <li>
-                <strong>Tamu:</strong> budi@example.com <span className="text-heritage-gold-500 font-serif italic">(password: password)</span>
+                <strong>Admin/Staff:</strong> admin@drghotel.com <span className="text-heritage-gold-500 font-serif italic">(password: admin123)</span>
+              </li>
+              <li>
+                <strong>Management:</strong> manager@drghotel.com <span className="text-heritage-gold-500 font-serif italic">(password: manager123)</span>
               </li>
             </ul>
-          </div>
-
-          <div className="text-center text-xs text-heritage-green-800/70 mt-6">
-            <p>
-              Belum memiliki akun tamu?{" "}
-              <Link href="/register" className="text-heritage-gold-500 hover:underline font-semibold">
-                Daftar di sini
-              </Link>
-            </p>
           </div>
         </form>
       </div>
@@ -201,14 +164,14 @@ function LoginContent() {
   );
 }
 
-export default function Login() {
+export default function AdminLogin() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-heritage-cream-100 flex items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-heritage-gold-400 border-t-transparent"></div>
       </div>
     }>
-      <LoginContent />
+      <AdminLoginContent />
     </Suspense>
   );
 }

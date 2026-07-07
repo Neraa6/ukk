@@ -46,5 +46,5 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-# Push schema, seed the database, and start the Next.js server
-CMD ["sh", "-c", "npx prisma db push && node prisma/seed.js && npm run start"]
+# Start the Next.js server
+CMD ["npm", "run", "start"]

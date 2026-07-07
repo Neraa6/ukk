@@ -332,7 +332,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!authLoading) {
       if (!user || (user.role !== "admin" && user.role !== "management")) {
-        router.push("/login");
+        router.push("/admin/login");
       } else {
         loadAllData();
       }
