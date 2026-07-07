@@ -317,11 +317,32 @@ function CatalogContent() {
                   <span>Kamar Fisik</span>
                   <span className="text-heritage-green-950">Kamar {selectedRoomType.availableRooms[0]?.room_number}</span>
                 </div>
-                <div className="flex justify-between text-xs font-semibold text-heritage-green-800 uppercase tracking-wider">
-                  <span>Tanggal Menginap</span>
-                  <span className="text-heritage-green-950">
-                    {new Date(checkIn).toLocaleDateString("id-ID")} - {new Date(checkOut).toLocaleDateString("id-ID")}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-semibold text-heritage-green-800 uppercase tracking-wider">
+                    <span>Tanggal Menginap</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-heritage-green-800/70 mb-1">Check-in</label>
+                      <input
+                        type="date"
+                        min={getTodayStr()}
+                        value={checkIn}
+                        onChange={(e) => setCheckIn(e.target.value)}
+                        className="w-full bg-white border border-heritage-gold-400/30 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm font-medium"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-heritage-green-800/70 mb-1">Check-out</label>
+                      <input
+                        type="date"
+                        min={checkIn || getTomorrowStr()}
+                        value={checkOut}
+                        onChange={(e) => setCheckOut(e.target.value)}
+                        className="w-full bg-white border border-heritage-gold-400/30 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm font-medium"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between text-xs font-semibold text-heritage-green-800 uppercase tracking-wider">
                   <span>Durasi</span>

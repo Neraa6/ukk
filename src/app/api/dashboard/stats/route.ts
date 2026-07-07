@@ -12,6 +12,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const periodDaysStr = searchParams.get("days") || "30";
   const periodDays = parseInt(periodDaysStr) || 30;
+  const startDateStr = searchParams.get("startDate");
+  const endDateStr = searchParams.get("endDate");
 
   try {
     const todayStart = new Date();
@@ -52,15 +54,45 @@ export async function GET(request: Request) {
 
     const totalRevenueToday = roomRevenueToday + restoRevenueToday;
 
+    // Setup date bounds for chart & top menus
+    let chartStartDate = new Date();
+    chartStartDate.setMonth(chartStartDate.getMonth() - 5);
+    chartStartDate.setDate(1);
+    chartStartDate.setHours(0, 0, 0, 0);
+
+    let chartEndDate = new Date();
+    chartEndDate.setHours(23, 59, 59, 999);
+
+    const useCustomRange = !!(startDateStr && endDateStr);
+    if (useCustomRange) {
+      const parsedStart = new Date(startDateStr!);
+      const parsedEnd = new Date(endDateStr!);
+      if (!isNaN(parsedStart.getTime()) && !isNaN(parsedEnd.getTime())) {
+        chartStartDate = parsedStart;
+        chartStartDate.setHours(0, 0, 0, 0);
+        chartEndDate = parsedEnd;
+        chartEndDate.setHours(23, 59, 59, 999);
+      }
+    }
+
     // 3. Top 5 Best Selling Menu Items (US-E1 AC3)
+    const topMenusWhere: any = {
+      status: "paid",
+    };
+    if (useCustomRange) {
+      topMenusWhere.created_at = {
+        gte: chartStartDate,
+        lte: chartEndDate,
+      };
+    } else {
+      topMenusWhere.created_at = {
+        gte: periodStartDate,
+      };
+    }
+
     const orderDetails = await prisma.restaurant_order_details.findMany({
       where: {
-        restaurant_orders: {
-          created_at: {
-            gte: periodStartDate,
-          },
-          status: "paid", // Only count paid orders
-        },
+        restaurant_orders: topMenusWhere,
       },
       include: {
         restaurant_menus: true,
@@ -86,17 +118,13 @@ export async function GET(request: Request) {
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5);
 
-    // 4. Get monthly revenue charts for past 6 months (extra metrics for visually stunning dashboard)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-    sixMonthsAgo.setDate(1);
-    sixMonthsAgo.setHours(0, 0, 0, 0);
-
+    // 4. Get revenue charts (adaptively grouped by Day or Month)
     const pastPayments = await prisma.payments.findMany({
       where: {
         payment_status: "paid",
         created_at: {
-          gte: sixMonthsAgo,
+          gte: chartStartDate,
+          lte: chartEndDate,
         },
       },
       select: {
@@ -107,30 +135,68 @@ export async function GET(request: Request) {
       },
     });
 
-    // Group by month
-    const monthlyRevenueMap: { [key: string]: { month: string; room: number; resto: number } } = {};
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const diffTime = Math.abs(chartEndDate.getTime() - chartStartDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let chartData: Array<{ month: string; room: number; resto: number }> = [];
 
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const label = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().substr(-2)}`;
-      monthlyRevenueMap[label] = { month: label, room: 0, resto: 0 };
-    }
-
-    pastPayments.forEach((p) => {
-      const d = new Date(p.created_at);
-      const label = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().substr(-2)}`;
-      if (monthlyRevenueMap[label]) {
-        if (p.booking_id !== null) {
-          monthlyRevenueMap[label].room += Number(p.amount);
-        } else if (p.restaurant_order_id !== null) {
-          monthlyRevenueMap[label].resto += Number(p.amount);
-        }
+    if (diffDays <= 31) {
+      // Group by Day (Daily)
+      const dailyRevenueMap: { [key: string]: { month: string; room: number; resto: number } } = {};
+      const tempDate = new Date(chartStartDate);
+      
+      while (tempDate <= chartEndDate) {
+        const label = `${tempDate.getDate()} ${monthNames[tempDate.getMonth()]}`;
+        dailyRevenueMap[label] = { month: label, room: 0, resto: 0 };
+        tempDate.setDate(tempDate.getDate() + 1);
       }
-    });
 
-    const chartData = Object.values(monthlyRevenueMap);
+      pastPayments.forEach((p) => {
+        const d = new Date(p.created_at);
+        const label = `${d.getDate()} ${monthNames[d.getMonth()]}`;
+        if (dailyRevenueMap[label]) {
+          if (p.booking_id !== null) {
+            dailyRevenueMap[label].room += Number(p.amount);
+          } else if (p.restaurant_order_id !== null) {
+            dailyRevenueMap[label].resto += Number(p.amount);
+          }
+        }
+      });
+      
+      chartData = Object.values(dailyRevenueMap);
+    } else {
+      // Group by Month (Monthly)
+      const monthlyRevenueMap: { [key: string]: { month: string; room: number; resto: number } } = {};
+      const tempDate = new Date(chartStartDate);
+      tempDate.setDate(1); // Set to 1st to prevent month skip overflow
+      
+      const endYear = chartEndDate.getFullYear();
+      const endMonth = chartEndDate.getMonth();
+      
+      while (
+        tempDate.getFullYear() < endYear ||
+        (tempDate.getFullYear() === endYear && tempDate.getMonth() <= endMonth)
+      ) {
+        const label = `${monthNames[tempDate.getMonth()]} ${tempDate.getFullYear().toString().substr(-2)}`;
+        monthlyRevenueMap[label] = { month: label, room: 0, resto: 0 };
+        tempDate.setMonth(tempDate.getMonth() + 1);
+      }
+
+      pastPayments.forEach((p) => {
+        const d = new Date(p.created_at);
+        const label = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().substr(-2)}`;
+        if (monthlyRevenueMap[label]) {
+          if (p.booking_id !== null) {
+            monthlyRevenueMap[label].room += Number(p.amount);
+          } else if (p.restaurant_order_id !== null) {
+            monthlyRevenueMap[label].resto += Number(p.amount);
+          }
+        }
+      });
+      
+      chartData = Object.values(monthlyRevenueMap);
+    }
 
     return NextResponse.json({
       occupancy: {

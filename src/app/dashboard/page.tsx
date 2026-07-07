@@ -68,6 +68,25 @@ export default function Dashboard() {
 
   // Data states
   const [stats, setStats] = useState<Stats | null>(null);
+
+  // Helper to get default date ranges
+  const getDefaultStartDate = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 5);
+    d.setDate(1);
+    return d.toISOString().split("T")[0];
+  };
+
+  const getDefaultEndDate = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
+  const [chartStartDate, setChartStartDate] = useState("");
+  const [chartEndDate, setChartEndDate] = useState("");
+  const [chartLoading, setChartLoading] = useState(false);
+
+  const isCustomDate = mounted && (chartStartDate !== getDefaultStartDate() || chartEndDate !== getDefaultEndDate());
+
   const [bookings, setBookings] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
@@ -305,6 +324,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
+    setChartStartDate(getDefaultStartDate());
+    setChartEndDate(getDefaultEndDate());
   }, []);
 
   // Auth Redirect: If not admin/management, block
@@ -323,8 +344,12 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
+      const start = chartStartDate || getDefaultStartDate();
+      const end = chartEndDate || getDefaultEndDate();
+      const statsUrl = `/api/dashboard/stats?startDate=${start}&endDate=${end}`;
+
       const [statsRes, bookingsRes, roomsRes, typesRes, menusRes] = await Promise.all([
-        fetch("/api/dashboard/stats"),
+        fetch(statsUrl),
         fetch("/api/bookings"),
         fetch("/api/rooms"),
         fetch("/api/room-types"),
@@ -352,6 +377,60 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadChartData = async (start: string, end: string) => {
+    setChartLoading(true);
+    try {
+      const res = await fetch(`/api/dashboard/stats?startDate=${start}&endDate=${end}`);
+      if (!res.ok) throw new Error("Gagal mengambil data analitik");
+      const data = await res.json();
+      setStats((prev) =>
+        prev
+          ? {
+              ...prev,
+              chartData: data.chartData,
+              topMenus: data.topMenus,
+            }
+          : data
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  const handleStartDateChange = (val: string) => {
+    setChartStartDate(val);
+    if (val && chartEndDate) {
+      if (val > chartEndDate) {
+        setChartEndDate(val);
+        loadChartData(val, val);
+      } else {
+        loadChartData(val, chartEndDate);
+      }
+    }
+  };
+
+  const handleEndDateChange = (val: string) => {
+    setChartEndDate(val);
+    if (chartStartDate && val) {
+      if (chartStartDate > val) {
+        setChartStartDate(val);
+        loadChartData(val, val);
+      } else {
+        loadChartData(chartStartDate, val);
+      }
+    }
+  };
+
+  const handleResetChartDate = () => {
+    const start = getDefaultStartDate();
+    const end = getDefaultEndDate();
+    setChartStartDate(start);
+    setChartEndDate(end);
+    loadChartData(start, end);
   };
 
   const handleBookingAction = async (bookingId: number, action: "check-in" | "check-out" | "cancel") => {
