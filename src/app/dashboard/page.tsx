@@ -16,7 +16,9 @@ import {
   Check,
   X,
   AlertCircle,
-  FileSpreadsheet,
+  ClipboardList,
+  Users,
+  Receipt,
   Settings,
   ShieldCheck,
 } from "lucide-react";
@@ -45,6 +47,12 @@ interface Stats {
     room: number;
     restaurant: number;
     total: number;
+  };
+  additionalStats: {
+    totalBookingsToday: number;
+    totalRestoOrdersToday: number;
+    averageRoomRate: number;
+    uniqueGuestsToday: number;
   };
   topMenus: Array<{
     id: number;
@@ -134,7 +142,9 @@ export default function Dashboard() {
   const handleDownloadPDF = async () => {
     setExporting(true);
     try {
-      const res = await fetch("/api/dashboard/export");
+      const start = chartStartDate || getDefaultStartDate();
+      const end = chartEndDate || getDefaultEndDate();
+      const res = await fetch(`/api/dashboard/export?startDate=${start}&endDate=${end}`);
       if (!res.ok) throw new Error("Gagal mengambil data laporan");
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Gagal memproses data laporan");
@@ -176,7 +186,8 @@ export default function Dashboard() {
       doc.setTextColor(229, 223, 213);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
-      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 190, 31, { align: "right" });
+      doc.text(`Periode: ${start} - ${end}`, 190, 29, { align: "right" });
+      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 190, 33, { align: "right" });
 
       // 3. Summary Metadata Section
       const totalTransactions = payments.length;
@@ -206,7 +217,7 @@ export default function Dashboard() {
       doc.text("Total Pendapatan (Lunas):", 70, 57);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(29, 59, 43);
-      doc.text(`IDR ${totalRevenue.toLocaleString("id-ID")}`, 108, 57);
+      doc.text(`IDR ${totalRevenue.toLocaleString("id-ID")}`, 110, 57);
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor(74, 93, 78);
@@ -214,6 +225,60 @@ export default function Dashboard() {
       doc.setFont("helvetica", "bold");
       doc.setTextColor(13, 31, 21);
       doc.text(user?.name || "-", 175, 57);
+
+      // Add Dashboard Stats Data
+      if (stats) {
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Okupansi Kamar:", 15, 65);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(13, 31, 21);
+        doc.text(`${stats.occupancy.rate.toFixed(1)}% (${stats.occupancy.occupiedRooms}/${stats.occupancy.totalRooms})`, 45, 65);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Omset Kamar Hari Ini:", 70, 65);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(29, 59, 43);
+        doc.text(`IDR ${stats.revenueToday.room.toLocaleString("id-ID")}`, 110, 65);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Omset Resto Hari Ini:", 145, 65);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(29, 59, 43);
+        doc.text(`IDR ${stats.revenueToday.restaurant.toLocaleString("id-ID")}`, 175, 65);
+
+        // Additional Stats line
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Total Booking Hari Ini:", 15, 73);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(13, 31, 21);
+        doc.text(stats.additionalStats.totalBookingsToday.toString(), 45, 73);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Total Pesanan Resto:", 70, 73);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(13, 31, 21);
+        doc.text(stats.additionalStats.totalRestoOrdersToday.toString(), 110, 73);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Tamu Aktif Hari Ini:", 145, 73);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(13, 31, 21);
+        doc.text(stats.additionalStats.uniqueGuestsToday.toString(), 175, 73);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(74, 93, 78);
+        doc.text("Top Menu (Porsi):", 15, 81);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(13, 31, 21);
+        const topMenuNames = stats.topMenus.map(m => `${m.name} (${m.quantity})`).join(", ");
+        doc.text(topMenuNames.length > 90 ? topMenuNames.substring(0, 90) + "..." : topMenuNames || "-", 45, 81);
+      }
 
       // 4. Prepare Table Data for autotable
       const tableHeaders = [
@@ -255,7 +320,7 @@ export default function Dashboard() {
 
       // 5. Render Table using jspdf-autotable
       autoTable(doc, {
-        startY: 65,
+        startY: stats ? 93 : 65,
         head: tableHeaders,
         body: tableRows,
         theme: "striped",
@@ -825,16 +890,113 @@ export default function Dashboard() {
                   <Utensils className="h-5 w-5" />
                 </div>
               </div>
+
+              {/* Card 5: Total Bookings */}
+              <div className="bg-white p-6 rounded-lg shadow border border-heritage-gold-400/10 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-heritage-green-800/50 uppercase tracking-widest block">
+                    Booking Hari Ini
+                  </span>
+                  <h3 className="text-2xl font-bold font-serif text-heritage-green-950 mt-1">
+                    {stats?.additionalStats.totalBookingsToday || 0}
+                  </h3>
+                  <span className="text-xs text-heritage-green-800/60 font-sans block mt-1">
+                    Jumlah reservasi kamar baru
+                  </span>
+                </div>
+                <div className="bg-heritage-cream-100 text-heritage-gold-500 p-3 rounded-full shrink-0">
+                  <ClipboardList className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Card 6: Total Resto Orders */}
+              <div className="bg-white p-6 rounded-lg shadow border border-heritage-gold-400/10 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-heritage-green-800/50 uppercase tracking-widest block">
+                    Pesanan Resto
+                  </span>
+                  <h3 className="text-2xl font-bold font-serif text-heritage-green-950 mt-1">
+                    {stats?.additionalStats.totalRestoOrdersToday || 0}
+                  </h3>
+                  <span className="text-xs text-heritage-green-800/60 font-sans block mt-1">
+                    Total pesanan hari ini
+                  </span>
+                </div>
+                <div className="bg-heritage-cream-100 text-heritage-gold-500 p-3 rounded-full shrink-0">
+                  <Receipt className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Card 7: Average Room Rate */}
+              <div className="bg-white p-6 rounded-lg shadow border border-heritage-gold-400/10 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-heritage-green-800/50 uppercase tracking-widest block">
+                    Rata-Rata Tarif Kamar
+                  </span>
+                  <h3 className="text-2xl font-bold font-serif text-heritage-green-950 mt-1">
+                    {formatCurrency(stats?.additionalStats.averageRoomRate || 0)}
+                  </h3>
+                  <span className="text-xs text-heritage-green-800/60 font-sans block mt-1">
+                    Pendapatan per kamar terisi
+                  </span>
+                </div>
+                <div className="bg-heritage-cream-100 text-heritage-gold-500 p-3 rounded-full shrink-0">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Card 8: Active Guests */}
+              <div className="bg-white p-6 rounded-lg shadow border border-heritage-gold-400/10 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-heritage-green-800/50 uppercase tracking-widest block">
+                    Tamu Aktif Hari Ini
+                  </span>
+                  <h3 className="text-2xl font-bold font-serif text-heritage-green-950 mt-1">
+                    {stats?.additionalStats.uniqueGuestsToday || 0}
+                  </h3>
+                  <span className="text-xs text-heritage-green-800/60 font-sans block mt-1">
+                    Tamu unik yang bertransaksi
+                  </span>
+                </div>
+                <div className="bg-heritage-cream-100 text-heritage-gold-500 p-3 rounded-full shrink-0">
+                  <Users className="h-5 w-5" />
+                </div>
+              </div>
             </div>
 
             {/* Charts and Top Menus layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Revenue Trends Chart (Past 6 Months) */}
+              {/* Revenue Trends Chart */}
               <div className="lg:col-span-2 bg-white p-6 rounded-lg border border-heritage-gold-400/10 shadow space-y-4">
-                <h4 className="font-serif text-lg font-bold text-heritage-green-950 flex items-center gap-1.5">
-                  <TrendingUp className="h-5 w-5 text-heritage-gold-500" />
-                  Tren Pendapatan 6 Bulan Terakhir
-                </h4>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <h4 className="font-serif text-lg font-bold text-heritage-green-950 flex items-center gap-1.5">
+                    <TrendingUp className="h-5 w-5 text-heritage-gold-500" />
+                    Tren Pendapatan {isCustomDate ? "" : "(6 Bulan Terakhir)"}
+                  </h4>
+                  <div className="flex items-center gap-2 text-sm">
+                    <input
+                      type="date"
+                      value={chartStartDate}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-heritage-green-500"
+                    />
+                    <span>-</span>
+                    <input
+                      type="date"
+                      value={chartEndDate}
+                      onChange={(e) => handleEndDateChange(e.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-heritage-green-500"
+                    />
+                    {isCustomDate && (
+                      <button
+                        onClick={handleResetChartDate}
+                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
 
                 <div className="h-80 w-full font-sans text-xs">
                   {mounted && stats && stats.chartData.length > 0 ? (

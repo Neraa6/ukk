@@ -198,6 +198,43 @@ export async function GET(request: Request) {
       chartData = Object.values(monthlyRevenueMap);
     }
 
+    // 5. Additional Stats (Total Bookings, Orders, Active Guests, ARR)
+    const totalBookingsToday = await prisma.bookings.count({
+      where: {
+        created_at: {
+          gte: todayStart,
+          lte: todayEnd,
+        },
+      },
+    });
+
+    const totalRestoOrdersToday = await prisma.restaurant_orders.count({
+      where: {
+        created_at: {
+          gte: todayStart,
+          lte: todayEnd,
+        },
+      },
+    });
+
+    const averageRoomRate =
+      occupiedRooms > 0 ? roomRevenueToday / occupiedRooms : 0;
+
+    const guestBookingsToday = await prisma.bookings.findMany({
+      where: { created_at: { gte: todayStart, lte: todayEnd } },
+      select: { guest_id: true },
+    });
+    
+    const guestOrdersToday = await prisma.restaurant_orders.findMany({
+      where: { created_at: { gte: todayStart, lte: todayEnd } },
+      select: { guest_id: true },
+    });
+    
+    const uniqueGuestsToday = new Set([
+      ...guestBookingsToday.map((b) => b.guest_id),
+      ...guestOrdersToday.map((o) => o.guest_id),
+    ]).size;
+
     return NextResponse.json({
       occupancy: {
         totalRooms,
@@ -208,6 +245,12 @@ export async function GET(request: Request) {
         room: roomRevenueToday,
         restaurant: restoRevenueToday,
         total: totalRevenueToday,
+      },
+      additionalStats: {
+        totalBookingsToday,
+        totalRestoOrdersToday,
+        averageRoomRate,
+        uniqueGuestsToday,
       },
       topMenus,
       chartData,
