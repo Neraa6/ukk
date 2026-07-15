@@ -1,20 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Shield, Award, Sparkles, MapPin, Compass } from "lucide-react";
+
 
 export default function Home() {
   const router = useRouter();
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
 
+const [hostname, setHostname] = useState("");
+useEffect(() => {
+  fetch("/api/hostname")
+    .then((r) => r.json())
+    .then((d) => setHostname(d.hostname));
+}, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkIn || !checkOut) return;
     router.push(`/catalog?checkIn=${checkIn}&checkOut=${checkOut}`);
   };
+
+
 
   // Get tomorrow's date for check-out min attribute
   const todayStr = new Date().toISOString().split("T")[0];
@@ -39,7 +49,7 @@ export default function Home() {
         {/* Hero Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-12">
           <p className="text-heritage-gold-400 font-serif italic tracking-widest text-lg md:text-xl mb-4 animate-fade-in">
-            Selamat Datang di drgHotel
+            Selamat Datang di drghotel {hostname}
           </p>
           <h1 className="font-serif text-4xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-tight">
             Keagungan Warisan Klasik, <br />

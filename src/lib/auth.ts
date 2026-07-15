@@ -64,15 +64,15 @@ export function getAuthUser(): JWTPayload | null {
 // Set auth cookie
 export function setAuthCookie(token: string) {
   const cookieStore = cookies();
+
   cookieStore.set("auth_token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 60 * 60 * 24, // 24 hours
+    secure: false,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24,
     path: "/",
   });
 }
-
 // Delete auth cookie
 export function deleteAuthCookie() {
   const cookieStore = cookies();

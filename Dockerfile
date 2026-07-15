@@ -23,6 +23,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Dummy DATABASE_URL for build time if needed by Next.js static generation
 ENV DATABASE_URL="mysql://root:@localhost:3306/drg_hotel"
 
+
+ARG NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+ENV NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+
+
 RUN npm run build
 
 # Stage 3: Runner
