@@ -79,7 +79,10 @@ function LoginContent() {
       setLoading(false);
     }
   };
-
+console.log(
+  "NEXT_PUBLIC_RECAPTCHA_SITE_KEY =",
+  process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+);
   return (
     <div className="min-h-screen bg-heritage-cream-100 flex items-center justify-center py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl border border-heritage-gold-400/20">
