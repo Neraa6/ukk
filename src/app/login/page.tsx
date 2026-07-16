@@ -92,7 +92,7 @@ console.log(
             Masuk Akun Tamu
           </h2>
           <p className="text-sm text-heritage-green-800/60 mt-1 font-sans">
-            Sistem Informasi drgHotel
+            Sistem Informasi NeraaHotel
           </p>
         </div>
 

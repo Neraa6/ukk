@@ -16,7 +16,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "drgHotel — Elegant Heritage Hotel",
+  title: "NeraaHotel — Elegant Heritage Hotel",
   description: "Pengalaman menginap mewah bernuansa warisan budaya Nusantara",
   manifest: "/manifest.json",
 };

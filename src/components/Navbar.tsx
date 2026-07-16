@@ -66,7 +66,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2">
               <Hotel className="h-8 w-8 text-heritage-gold-400" />
               <span className="font-serif text-2xl font-bold tracking-wide text-heritage-gold-100">
-                drg<span className="text-heritage-gold-400">Hotel</span>
+                Neraa<span className="text-heritage-gold-400">Hotel</span>
               </span>
             </Link>
           </div>

@@ -49,7 +49,7 @@ useEffect(() => {
         {/* Hero Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-12">
           <p className="text-heritage-gold-400 font-serif italic tracking-widest text-lg md:text-xl mb-4 animate-fade-in">
-            Selamat Datang di drghotel {hostname}
+            Selamat Datang di NeraaHotel {hostname}
           </p>
           <h1 className="font-serif text-4xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-tight">
             Keagungan Warisan Klasik, <br />
@@ -168,7 +168,7 @@ useEffect(() => {
               Kuliner Warisan Nusantara
             </span>
             <h2 className="font-serif text-3xl md:text-5xl font-bold mb-6">
-              drgResto In-House Dining
+              NeraaResto In-House Dining
             </h2>
             <p className="text-heritage-gold-100/80 mb-8 leading-relaxed font-sans">
               Nikmati kelezatan soto bumbu kuning hangat, steak sirloin premium, hingga jus alpukat segar yang dapat dipesan langsung dari kamar Anda sewaktu menginap.

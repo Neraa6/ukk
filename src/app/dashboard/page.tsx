@@ -171,7 +171,7 @@ export default function Dashboard() {
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      doc.text("drgHotel", 20, 24);
+      doc.text("NeraaHotel", 20, 24);
 
       doc.setTextColor(197, 168, 128);
       doc.setFont("helvetica", "italic");
@@ -367,7 +367,7 @@ export default function Dashboard() {
           doc.setFont("helvetica", "italic");
           doc.setFontSize(6.5);
           doc.setTextColor(138, 158, 143);
-          doc.text("drgHotel - Laporan Transaksi Rahasia", 15, 287);
+          doc.text("NeraaHotel - Laporan Transaksi Rahasia", 15, 287);
           doc.text(
             `Halaman ${data.pageNumber}`,
             195,
@@ -378,7 +378,7 @@ export default function Dashboard() {
       });
 
       // 6. Save PDF
-      doc.save(`drgHotel-Laporan-Transaksi-${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(`NeraaHotel-Laporan-Transaksi-${new Date().toISOString().split("T")[0]}.pdf`);
     } catch (err: any) {
       console.error(err);
       alert(err.message || "Gagal mengunduh laporan PDF");

@@ -8,14 +8,14 @@ async function main() {
   // 1. Seed Users (Staff: Admin & Management)
   const defaultUsers = [
     {
-      name: 'Admin drgHotel',
-      email: 'admin@drghotel.com',
+      name: 'Admin NeraaHotel',
+      email: 'admin@neraahotel.com',
       password: 'password123',
       role: 'admin',
     },
     {
-      name: 'Manager drgHotel',
-      email: 'manager@drghotel.com',
+      name: 'Manager NeraaHotel',
+      email: 'manager@neraahotel.com',
       password: 'password123',
       role: 'management',
     },

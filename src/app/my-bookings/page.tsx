@@ -81,13 +81,13 @@ function MyBookingsContent() {
       setLastUpdated(new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
 
       // Save to localStorage for PWA offline fallback caching
-      localStorage.setItem("drghotel_cached_bookings", JSON.stringify(data.bookings));
-      localStorage.setItem("drghotel_cached_bookings_time", new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
+      localStorage.setItem("neraahotel_cached_bookings", JSON.stringify(data.bookings));
+      localStorage.setItem("neraahotel_cached_bookings_time", new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
     } catch (err) {
       console.error(err);
       // Fallback to offline localStorage cache
-      const cached = localStorage.getItem("drghotel_cached_bookings");
-      const cachedTime = localStorage.getItem("drghotel_cached_bookings_time");
+      const cached = localStorage.getItem("neraahotel_cached_bookings");
+      const cachedTime = localStorage.getItem("neraahotel_cached_bookings_time");
       if (cached) {
         setBookings(JSON.parse(cached));
         setLastUpdated(cachedTime);
@@ -211,7 +211,7 @@ function MyBookingsContent() {
             <Ticket className="h-12 w-12 text-heritage-gold-400 mx-auto mb-4" />
             <h3 className="font-serif text-xl font-bold mb-2">Belum Ada Pemesanan</h3>
             <p className="text-sm text-heritage-green-800/60 font-sans mb-6">
-              Anda belum melakukan reservasi kamar di drgHotel. Jelajahi katalog kami sekarang!
+              Anda belum melakukan reservasi kamar di NeraaHotel. Jelajahi katalog kami sekarang!
             </p>
             <button
               onClick={() => router.push("/catalog")}

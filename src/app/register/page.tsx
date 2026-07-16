@@ -68,7 +68,7 @@ export default function Register() {
             Daftar Akun Tamu
           </h2>
           <p className="text-sm text-heritage-green-800/60 mt-1 font-sans">
-            Mulai langkah perjalanan Anda bersama drgHotel
+            Mulai langkah perjalanan Anda bersama NeraaHotel
           </p>
         </div>
 

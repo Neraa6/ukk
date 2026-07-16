@@ -96,7 +96,7 @@ function MockCheckoutContent() {
         <div className="bg-heritage-green-900 text-heritage-gold-100 p-6 border-b border-heritage-gold-400/20">
           <div className="flex justify-between items-center mb-4">
             <span className="font-serif text-xl font-bold tracking-wide">
-              drg<span className="text-heritage-gold-400">Hotel</span> Pay
+              Neraa<span className="text-heritage-gold-400">Hotel</span> Pay
             </span>
             <span className="bg-heritage-gold-400 text-heritage-green-900 text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase">
               Sandbox Simulator

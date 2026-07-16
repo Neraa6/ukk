@@ -11,7 +11,7 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <Hotel className="h-6 w-6 text-heritage-gold-400" />
               <span className="font-serif text-xl font-bold tracking-wide text-heritage-gold-100">
-                drg<span className="text-heritage-gold-400">Hotel</span>
+                Neraa<span className="text-heritage-gold-400">Hotel</span>
               </span>
             </div>
             <p className="text-sm text-heritage-cream-100/60 leading-relaxed font-sans">
@@ -47,7 +47,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-heritage-cream-100/60">
               <li className="flex items-center gap-2">
                 <Compass className="h-4 w-4 text-heritage-gold-400/80" />
-                <span>Warisan Kuliner drgResto</span>
+                <span>Warisan Kuliner NeraaResto</span>
               </li>
               <li className="flex items-center gap-2">
                 <Compass className="h-4 w-4 text-heritage-gold-400/80" />
@@ -76,7 +76,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 text-heritage-gold-400 shrink-0" />
-                <span className="text-heritage-cream-100/60">info@drghotel.com</span>
+                <span className="text-heritage-cream-100/60">info@neraahotel.com</span>
               </li>
             </ul>
           </div>
@@ -85,7 +85,7 @@ export default function Footer() {
         <hr className="border-heritage-gold-400/10 my-8" />
 
         <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-heritage-cream-100/40 gap-4">
-          <p>&copy; 2026 drgHotel. Seluruh hak cipta dilindungi.</p>
+          <p>&copy; 2026 NeraaHotel. Seluruh hak cipta dilindungi.</p>
           <p className="font-serif italic tracking-wider text-heritage-gold-400/80">Elegant Heritage Hospitality</p>
         </div>
       </div>

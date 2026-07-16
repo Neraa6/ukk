@@ -295,7 +295,7 @@ function CatalogContent() {
             <div className="bg-heritage-green-900 text-heritage-gold-100 p-5 border-b border-heritage-gold-400/20">
               <h3 className="font-serif text-xl font-bold">Konfirmasi Reservasi</h3>
               <p className="text-xs text-heritage-gold-100/60 mt-1 font-sans">
-                drgHotel Heritage Premium Booking
+                NeraaHotel Heritage Premium Booking
               </p>
             </div>
 

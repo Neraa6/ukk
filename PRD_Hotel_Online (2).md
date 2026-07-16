@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## Sistem Informasi Hotel Online — "drgHotel"
+## Sistem Informasi Hotel Online — "NeraaHotel"
 
 | Atribut | Detail |
 |---|---|
@@ -11,7 +11,7 @@
 | **Payment Gateway** | Midtrans Snap (Sandbox) |
 | **Email Service** | Nodemailer + Gmail SMTP |
 | **PWA** | next-pwa (Service Worker + Cache Strategy) |
-| **Sumber PDM** | `drgHotel` — 8 tabel (payments, restaurant_orders, restaurant_order_details, restaurant_menus, guests, bookings, rooms, room_types, users) |
+| **Sumber PDM** | `NeraaHotel` — 8 tabel (payments, restaurant_orders, restaurant_order_details, restaurant_menus, guests, bookings, rooms, room_types, users) |
 
 ---
 
@@ -27,7 +27,7 @@ Manajemen hotel skala kecil hingga menengah di Indonesia umumnya masih mengandal
 
 ### 1.2 Proposed Solution
 
-**drgHotel** adalah sistem informasi hotel berbasis web *fullstack* yang dibangun di atas **Next.js 14 (App Router)** dengan **TypeScript** sebagai bahasa utama di sisi frontend maupun backend (API Routes/Route Handlers), serta **Tailwind CSS** untuk styling antarmuka. Backend menggunakan **Prisma ORM** di atas **MySQL** sebagai single source of truth yang merepresentasikan 8 entitas pada PDM yang dilampirkan.
+**NeraaHotel** adalah sistem informasi hotel berbasis web *fullstack* yang dibangun di atas **Next.js 14 (App Router)** dengan **TypeScript** sebagai bahasa utama di sisi frontend maupun backend (API Routes/Route Handlers), serta **Tailwind CSS** untuk styling antarmuka. Backend menggunakan **Prisma ORM** di atas **MySQL** sebagai single source of truth yang merepresentasikan 8 entitas pada PDM yang dilampirkan.
 
 Sistem ini menyatukan tiga modul inti dalam satu aplikasi:
 
@@ -333,7 +333,7 @@ Sistem mengadopsi arsitektur **decoupled secara logis namun ter-deploy secara mo
                                ▼
                   ┌─────────────────────────┐
                   │     MySQL 8 Database     │
-                  │  (drgHotel - 8 tables)   │
+                  │  (NeraaHotel - 8 tables)  │
                   └─────────────────────────┘
 
          External Integrations (Outbound dari Server Layer):
@@ -451,9 +451,9 @@ const transporter = nodemailer.createTransport({
 export const sendVerificationEmail = async (to: string, token: string) => {
   const verifyUrl = `${process.env.APP_URL}/verify-email?token=${token}`;
   await transporter.sendMail({
-    from: `"drgHotel" <${process.env.GMAIL_USER}>`,
+    from: `"NeraaHotel" <${process.env.GMAIL_USER}>`,
     to,
-    subject: 'Verifikasi Email Anda - drgHotel',
+    subject: 'Verifikasi Email Anda - NeraaHotel',
     html: `<p>Klik <a href="${verifyUrl}">tautan ini</a> untuk verifikasi email. Berlaku 24 jam.</p>`,
   });
 };

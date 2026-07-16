@@ -62,7 +62,7 @@ function AdminLoginContent() {
             Masuk Panel Internal
           </h2>
           <p className="text-sm text-heritage-green-800/60 mt-1 font-sans">
-            Sistem Informasi drgHotel
+            Sistem Informasi NeraaHotel
           </p>
         </div>
 
@@ -86,7 +86,7 @@ function AdminLoginContent() {
                 type="email"
                 name="email"
                 required
-                placeholder="admin@drghotel.com"
+                placeholder="admin@neraahotel.com"
                 value={formData.email}
                 onChange={handleChange}
                 className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
@@ -151,10 +151,10 @@ function AdminLoginContent() {
             </span>
             <ul className="text-xs text-heritage-green-900/80 space-y-1.5 font-sans leading-relaxed">
               <li>
-                <strong>Admin/Staff:</strong> admin@drghotel.com <span className="text-heritage-gold-500 font-serif italic">(password: admin123)</span>
+                <strong>Admin/Staff:</strong> admin@neraahotel.com <span className="text-heritage-gold-500 font-serif italic">(password: admin123)</span>
               </li>
               <li>
-                <strong>Management:</strong> manager@drghotel.com <span className="text-heritage-gold-500 font-serif italic">(password: manager123)</span>
+                <strong>Management:</strong> manager@neraahotel.com <span className="text-heritage-gold-500 font-serif italic">(password: manager123)</span>
               </li>
             </ul>
           </div>

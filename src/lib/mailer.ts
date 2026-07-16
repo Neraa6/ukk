@@ -32,13 +32,13 @@ export async function sendVerificationEmail(to: string, token: string) {
     });
 
     await transporter.sendMail({
-      from: `"drgHotel" <${gmailUser}>`,
+      from: `"NeraaHotel" <${gmailUser}>`,
       to,
-      subject: "Verifikasi Email Anda - drgHotel",
+      subject: "Verifikasi Email Anda - NeraaHotel",
       html: `
         <div style="font-family: serif; padding: 20px; background-color: #f4efe6; color: #0d1f15; border-radius: 8px;">
           <h2 style="color: #1d3b2b; border-bottom: 2px solid #c5a880; padding-bottom: 10px;">Verifikasi Email Anda</h2>
-          <p>Terima kasih telah mendaftar di <strong>drgHotel</strong>.</p>
+          <p>Terima kasih telah mendaftar di <strong>NeraaHotel</strong>.</p>
           <p>Silakan klik tombol di bawah ini untuk memverifikasi alamat email Anda. Tautan ini berlaku selama 24 jam.</p>
           <div style="margin: 30px 0;">
             <a href="${verifyUrl}" style="background-color: #1d3b2b; color: #f4efe6; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; border: 1px solid #c5a880;">
@@ -48,7 +48,7 @@ export async function sendVerificationEmail(to: string, token: string) {
           <p style="font-size: 0.9em; color: #555;">Jika tombol tidak berfungsi, Anda juga dapat menyalin tautan berikut ke browser Anda:</p>
           <p style="word-break: break-all; font-size: 0.85em;"><a href="${verifyUrl}" style="color: #a9895c;">${verifyUrl}</a></p>
           <hr style="border: 0; border-top: 1px solid #c5a880; margin-top: 20px;" />
-          <p style="font-size: 0.8em; color: #777;">&copy; 2026 drgHotel. Elegant Heritage.</p>
+          <p style="font-size: 0.8em; color: #777;">&copy; 2026 NeraaHotel. Elegant Heritage.</p>
         </div>
       `,
     });
@@ -95,13 +95,13 @@ export async function sendResetPasswordEmail(to: string, token: string) {
     });
 
     await transporter.sendMail({
-      from: `"drgHotel" <${gmailUser}>`,
+      from: `"NeraaHotel" <${gmailUser}>`,
       to,
-      subject: "Atur Ulang Password Anda - drgHotel",
+      subject: "Atur Ulang Password Anda - NeraaHotel",
       html: `
         <div style="font-family: serif; padding: 20px; background-color: #f4efe6; color: #0d1f15; border-radius: 8px;">
           <h2 style="color: #1d3b2b; border-bottom: 2px solid #c5a880; padding-bottom: 10px;">Atur Ulang Password Anda</h2>
-          <p>Kami menerima permintaan untuk mengatur ulang password akun Anda di <strong>drgHotel</strong>.</p>
+          <p>Kami menerima permintaan untuk mengatur ulang password akun Anda di <strong>NeraaHotel</strong>.</p>
           <p>Silakan klik tombol di bawah ini untuk mereset password Anda. Tautan ini berlaku selama 1 jam.</p>
           <div style="margin: 30px 0;">
             <a href="${resetUrl}" style="background-color: #1d3b2b; color: #f4efe6; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; border: 1px solid #c5a880;">
@@ -112,7 +112,7 @@ export async function sendResetPasswordEmail(to: string, token: string) {
           <p style="font-size: 0.9em; color: #555;">Jika tombol tidak berfungsi, Anda juga dapat menyalin tautan berikut ke browser Anda:</p>
           <p style="word-break: break-all; font-size: 0.85em;"><a href="${resetUrl}" style="color: #a9895c;">${resetUrl}</a></p>
           <hr style="border: 0; border-top: 1px solid #c5a880; margin-top: 20px;" />
-          <p style="font-size: 0.8em; color: #777;">&copy; 2026 drgHotel. Elegant Heritage.</p>
+          <p style="font-size: 0.8em; color: #777;">&copy; 2026 NeraaHotel. Elegant Heritage.</p>
         </div>
       `,
     });

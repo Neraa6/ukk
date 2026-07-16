@@ -190,7 +190,7 @@ export default function Resto() {
             <Utensils className="h-6 w-6" />
           </div>
           <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-heritage-green-900">
-            Layanan Restoran drgResto
+            Layanan Restoran NeraaResto
           </h1>
           <p className="text-sm text-heritage-green-800/70 mt-2 font-sans">
             Pesan makanan warisan Nusantara langsung diantar ke Kamar {activeBooking?.rooms?.room_number}
