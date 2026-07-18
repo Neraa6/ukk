@@ -13,15 +13,23 @@ export default function Register() {
     phone: "",
     identityNumber: "",
     password: "",
+    address: "",
   });
+  const [photo, setPhoto] = useState<File | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [mockVerifyUrl, setMockVerifyUrl] = useState<string | undefined>(undefined);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setPhoto(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,13 +40,18 @@ export default function Register() {
     setMockVerifyUrl(undefined);
 
     try {
+      const formPayload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        formPayload.append(key, value);
+      });
+      formPayload.append("recaptchaToken", "mock-token");
+      if (photo) {
+        formPayload.append("photo", photo);
+      }
+
       const res = await fetch("/api/auth/guest/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          recaptchaToken: "mock-token", // Sandbox mode reCAPTCHA token bypass
-        }),
+        body: formPayload,
       });
 
       const data = await res.json();
@@ -221,6 +234,34 @@ export default function Register() {
                   className="block w-full pl-10 pr-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
                 />
               </div>
+            </div>
+
+            {/* Alamat */}
+            <div>
+              <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
+                Alamat Lengkap
+              </label>
+              <textarea
+                name="address"
+                placeholder="Jl. Merdeka No. 1..."
+                value={formData.address}
+                onChange={handleChange}
+                className="block w-full px-3 py-2 border border-heritage-gold-400/30 rounded focus:outline-none focus:ring-1 focus:ring-heritage-green-700 text-sm bg-heritage-cream-50"
+                rows={3}
+              />
+            </div>
+
+            {/* Foto (Opsional) */}
+            <div>
+              <label className="block text-xs font-semibold text-heritage-green-800 uppercase tracking-wider mb-1">
+                Foto (Opsional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="block w-full text-sm text-heritage-green-800 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-heritage-gold-100 file:text-heritage-gold-700 hover:file:bg-heritage-gold-200 focus:outline-none"
+              />
             </div>
 
             {/* Submit */}

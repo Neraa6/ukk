@@ -3,6 +3,8 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { hashPassword, signToken, verifyRecaptcha } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/mailer";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 const RegisterSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter"),
@@ -10,13 +12,21 @@ const RegisterSchema = z.object({
   password: z.string().min(6, "Password minimal 6 karakter"),
   phone: z.string().min(10, "Nomor telepon minimal 10 digit"),
   identityNumber: z.string().min(10, "Nomor identitas minimal 10 karakter"),
+  address: z.string().optional(),
   recaptchaToken: z.string().optional(),
 });
 
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const formData = await request.formData();
+    const body: Record<string, any> = {};
+    formData.forEach((value, key) => {
+      if (key !== "photo") {
+        body[key] = value;
+      }
+    });
+
     const result = RegisterSchema.safeParse(body);
 
     if (!result.success) {
@@ -26,7 +36,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, phone, identityNumber, recaptchaToken } = result.data;
+    const { name, email, password, phone, identityNumber, address, recaptchaToken } = result.data;
 
     // 1. Verify reCAPTCHA
     const isHuman = await verifyRecaptcha(recaptchaToken);
@@ -49,10 +59,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Hash password
+    // 3. Handle photo upload
+    let photoUrl = null;
+    const photo = formData.get("photo") as File | null;
+    if (photo && photo.size > 0) {
+      try {
+        const buffer = Buffer.from(await photo.arrayBuffer());
+        const fileName = Date.now() + "_" + photo.name.replace(/\s+/g, "_");
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "guests");
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(path.join(uploadDir, fileName), buffer);
+        photoUrl = `/uploads/guests/${fileName}`;
+      } catch (err) {
+        console.error("Gagal mengupload foto:", err);
+      }
+    }
+
+    // 4. Hash password
     const hashedPassword = await hashPassword(password);
 
-    // 4. Save guest (email_verified_at defaults to NULL)
+    // 5. Save guest (email_verified_at defaults to NULL)
     const newGuest = await prisma.guests.create({
       data: {
         name,
@@ -60,11 +86,13 @@ export async function POST(request: Request) {
         password: hashedPassword,
         phone,
         identity_number: identityNumber,
+        address,
+        photo_url: photoUrl,
         updated_at: new Date(),
       },
     });
 
-    // 5. Generate email verification JWT (expires in 24 hours)
+    // 6. Generate email verification JWT (expires in 24 hours)
     const verificationToken = signToken({
       id: newGuest.id,
       email: newGuest.email,
@@ -72,7 +100,7 @@ export async function POST(request: Request) {
       name: newGuest.name,
     });
 
-    // 6. Send verification email
+    // 7. Send verification email
     const mailResult = await sendVerificationEmail(email, verificationToken);
 
     return NextResponse.json(
