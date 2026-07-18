@@ -11,12 +11,12 @@ export default function Home() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
 
-const [hostname, setHostname] = useState("");
-useEffect(() => {
-  fetch("/api/hostname")
-    .then((r) => r.json())
-    .then((d) => setHostname(d.hostname));
-}, []);
+  const [hostname, setHostname] = useState("");
+  useEffect(() => {
+    fetch("/api/hostname")
+      .then((r) => r.json())
+      .then((d) => setHostname(d.hostname));
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
